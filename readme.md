@@ -132,92 +132,125 @@ public class GraphTraversal {
 
 }
 
-
 import java.util.*;
 
 public class ExpressionConverter {
 
-  // ---------------------------
-  // INFIX TO POSTFIX
-  // ---------------------------
-  public String infixToPostfix(String infix) {
-    StringBuilder result = new StringBuilder();
-    Stack<Character> stack = new Stack<>();
-
-    for (char c : infix.toCharArray()) {
-
-      // 1. If operand → add to output
-      if (Character.isLetterOrDigit(c)) {
-        result.append(c);
-      }
-
-      // 2. If '(' → push
-      else if (c == '(') {
-        stack.push(c);
-      }
-
-      // 3. If ')' → pop until '('
-      else if (c == ')') {
-        while (!stack.isEmpty() && stack.peek() != '(') {
-          result.append(stack.pop());
+    // ---------------------------------------
+    //  UTILITY: PRECEDENCE
+    // ---------------------------------------
+    static int precedence(char c) {
+        switch (c) {
+            case '+':
+            case '-': return 1;
+            case '*':
+            case '/': return 2;
+            case '^': return 3;
         }
-        stack.pop(); // remove '('
-      }
+        return -1;
+    }
 
-      // 4. Operator
-      else {
-        while (!stack.isEmpty() &&
-            precedence(stack.peek()) >= precedence(c)) {
-          result.append(stack.pop());
+    // ---------------------------------------
+    //  1. INFIX → POSTFIX
+    // ---------------------------------------
+    public static String infixToPostfix(String exp) {
+
+        Stack<Character> stack = new Stack<>();
+        String result = "";
+
+        for (char c : exp.toCharArray()) {
+
+            // If operand (A, B, C, 1,2,3...)
+            if (Character.isLetterOrDigit(c)) {
+                result += c;
+            }
+            // If (
+            else if (c == '(') {
+                stack.push(c);
+            }
+            // If )
+            else if (c == ')') {
+                while (!stack.isEmpty() && stack.peek() != '(') {
+                    result += stack.pop();
+                }
+                stack.pop();  // remove (
+            }
+            // Operator
+            else {
+                while (!stack.isEmpty() &&
+                       precedence(c) <= precedence(stack.peek())) {
+                    result += stack.pop();
+                }
+                stack.push(c);
+            }
         }
-        stack.push(c);
-      }
+
+        // pop remaining operators
+        while (!stack.isEmpty()) {
+            result += stack.pop();
+        }
+
+        return result;
     }
 
-    // 5. Pop remaining
-    while (!stack.isEmpty()) {
-      result.append(stack.pop());
+    // ---------------------------------------
+    //  2. INFIX → PREFIX
+    // ---------------------------------------
+    public static String infixToPrefix(String exp) {
+
+        // Step 1: Reverse
+        String reversed = new StringBuilder(exp).reverse().toString();
+
+        // Step 2: Swap parentheses
+        char[] arr = reversed.toCharArray();
+        for (int i = 0; i < arr.length; i++) {
+            if (arr[i] == '(') arr[i] = ')';
+            else if (arr[i] == ')') arr[i] = '(';
+        }
+        reversed = new String(arr);
+
+        // Step 3: Convert reversed to postfix
+        String postfix = infixToPostfix(reversed);
+
+        // Step 4: Reverse postfix → prefix
+        return new StringBuilder(postfix).reverse().toString();
     }
 
-    return result.toString();
-  }
+    // ---------------------------------------
+    //  3. POSTFIX → INFIX
+    // ---------------------------------------
+    public static String postfixToInfix(String exp) {
+        Stack<String> stack = new Stack<>();
 
-  // Operator precedence
-  private int precedence(char c) {
-    return switch (c) {
-      case '+', '-' -> 1;
-      case '*', '/' -> 2;
-      case '^' -> 3;
-      default -> -1;
-    };
-  }
-
-  // ---------------------------
-  // POSTFIX TO INFIX
-  // ---------------------------
-  public String postfixToInfix(String postfix) {
-    Stack<String> stack = new Stack<>();
-
-    for (char c : postfix.toCharArray()) {
-
-      // Operand → push
-      if (Character.isLetterOrDigit(c)) {
-        stack.push(String.valueOf(c));
-      }
-
-      // Operator → pop 2, build new string
-      else {
-        String right = stack.pop();
-        String left = stack.pop();
-        String expr = "(" + left + c + right + ")";
-        stack.push(expr);
-      }
+        for (char c : exp.toCharArray()) {
+            if (Character.isLetterOrDigit(c)) {
+                stack.push("" + c);
+            } else {
+                String b = stack.pop();
+                String a = stack.pop();
+                stack.push("(" + a + c + b + ")");
+            }
+        }
+        return stack.pop();
     }
 
-    // Final element = complete expression
-    return stack.pop();
-  }
+    // ---------------------------------------
+    //  MAIN (TESTING)
+    // ---------------------------------------
+    public static void main(String[] args) {
+
+        String infix = "(A+B)*C";
+        String postfix = "AB+C*";
+
+        System.out.println("INFIX: " + infix);
+        System.out.println("POSTFIX: " + infixToPostfix(infix));
+        System.out.println("PREFIX: " + infixToPrefix(infix));
+
+        System.out.println("\nPOSTFIX → INFIX");
+        System.out.println(postfix + " = " + postfixToInfix(postfix));
+    }
 }
+
 
 
 public class BinarySearchTree {
